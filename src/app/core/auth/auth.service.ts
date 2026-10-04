@@ -54,18 +54,22 @@ export class AuthService {
       const pad = base64.length % 4;
       const decoded = atob(base64 + (pad ? '='.repeat(4 - pad) : ''));
       const claims = JSON.parse(decoded);
-      console.log('JWT claims:', claims);
       // Support both singular 'role' and plural 'roles' claim names
-      const roles: string[] = Array.isArray(claims.role)
-        ? claims.role
-        : Array.isArray(claims.roles)
-          ? claims.roles
-          : [];
+      // The API may emit a single string (one role) or an array (multiple roles)
+      let roles: string[];
+      if (Array.isArray(claims.role)) {
+        roles = claims.role;
+      } else if (typeof claims.role === 'string') {
+        roles = [claims.role];
+      } else if (Array.isArray(claims.roles)) {
+        roles = claims.roles;
+      } else {
+        roles = [];
+      }
       console.log('Extracted roles:', roles);
       this.rolesSignal.set(roles);
       this.hasWillhabenAccess = roles.includes('WillhabenConfig') || roles.includes('Admin');
       this.hasAdminAccess = roles.includes('Admin');
-      console.log('hasWillhabenAccess:', this.hasWillhabenAccess, 'hasAdminAccess:', this.hasAdminAccess);
     } catch (e) {
       console.error('Failed to decode JWT roles:', e);
       this.rolesSignal.set([]);

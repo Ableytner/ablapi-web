@@ -11,13 +11,13 @@ import { AuthService } from '../../core/auth/auth.service';
       <h1>Dashboard</h1>
       <div class="card-grid">
         <a routerLink="/gtnh" class="module-card">
-          <div class="card-icon">🎮</div>
+          <img class="card-icon" src="https://cdn.ableytner.at/icon_gtnh.png" alt="GTNH" />
           <h2>GTNH</h2>
           <p>View GTNewHorizons build versions, including daily and stable releases.</p>
         </a>
 
         <a *ngIf="authService.hasWillhabenAccess" routerLink="/willhaben" class="module-card">
-          <div class="card-icon">🏠</div>
+          <img class="card-icon" src="/logo-willhaben.png" alt="Willhaben" />
           <h2>Willhaben</h2>
           <p>Manage Willhaben.at search configurations and monitoring.</p>
         </a>
@@ -63,7 +63,9 @@ import { AuthService } from '../../core/auth/auth.service';
     }
 
     .card-icon {
-      font-size: 2.5rem;
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
       margin-bottom: 1rem;
     }
 
