@@ -8,3 +8,6 @@ services:
     ports:
       - 80:80
     restart: unless-stopped
+    environment:
+      - LOG_USER_ID=${LOG_USER_ID}
+      - LOG_TOKEN=${LOG_TOKEN}
