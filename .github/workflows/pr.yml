@@ -1,0 +1,19 @@
+name: Build images
+
+on: 
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-push:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/define-build-push.yml
+    with:
+      push_image: true
+    secrets: inherit

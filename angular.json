@@ -87,7 +87,8 @@
               "buildTarget": "ablapi-web:build:production"
             },
             "development": {
-              "buildTarget": "ablapi-web:build:development"
+              "buildTarget": "ablapi-web:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

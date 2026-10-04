@@ -1,0 +1,66 @@
+name: Release tagged image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_number:
+        description: "Version of the image to build and push"
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  tag:
+    runs-on: [self-hosted, linux]
+    steps:
+    - uses: mukunku/tag-exists-action@v1.7.0
+      id: check-tag
+      with:
+        tag: ${{ github.event.inputs.version_number }}
+    - name: Fail if tag exists
+      if: steps.check-tag.outputs.exists == 'true'
+      uses: actions/github-script@v9
+      with:
+        # https://timheuer.com/blog/manually-force-a-failure-in-github-action-step/#evaluating-your-condition-and-failing-the-step-manually
+        script: |
+            core.setFailed("Tag ${{ github.event.inputs.version_number }} already exists!")
+    - name: Print tag if it doesn't exist
+      if: steps.check-tag.outputs.exists == 'false'
+      run: |
+        echo "Tag ${{ github.event.inputs.version_number }} doesn't yet exist and can be created"
+
+  build-push:
+    needs: [tag]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/define-build-push.yml
+    with:
+      version_number: ${{ github.event.inputs.version_number }}
+      push_image: true
+    secrets: inherit
+
+  release:
+    needs: [build-push]
+    runs-on: [self-hosted, linux]
+    permissions:
+      contents: write
+    steps:
+    - name: Create body.md
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh api --method POST -H "Accept: application/vnd.github+json" \
+          "/repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+          -f tag_name="${{ github.event.inputs.version_number }}" \
+          --jq ".body" \
+          > body.md
+    - name: Create new release
+      uses: ncipollo/release-action@v1.21.0
+      with:
+        bodyFile: "body.md"
+        tag: ${{ github.event.inputs.version_number }}
+        token: ${{ secrets.GITHUB_TOKEN }}

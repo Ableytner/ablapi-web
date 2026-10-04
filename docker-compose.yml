@@ -1,0 +1,10 @@
+services:
+  api:
+    container_name: ablapi-web
+    hostname: ablapi-web
+#    image: ghcr.io/ableytner/ablapi-web:dev
+    build:
+      context: .
+    ports:
+      - 80:80
+    restart: unless-stopped

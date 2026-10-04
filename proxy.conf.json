@@ -1,0 +1,17 @@
+{
+  "/auth": {
+    "target": "https://api.ableytner.at",
+    "secure": true,
+    "changeOrigin": true
+  },
+  "/gtnh": {
+    "target": "https://api.ableytner.at",
+    "secure": true,
+    "changeOrigin": true
+  },
+  "/willhaben": {
+    "target": "https://api.ableytner.at",
+    "secure": true,
+    "changeOrigin": true
+  }
+}
