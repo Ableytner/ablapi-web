@@ -35,4 +35,9 @@ export interface CreateWillhabenConfigDto {
   reference_lat: number;
   reference_lon: number;
   max_distance_km: number;
+  // Form-only fields (comma-separated string input)
+  handover_types_raw?: string;
+  allowed_states_raw?: string;
+  must_include_raw?: string;
+  must_exclude_raw?: string;
 }

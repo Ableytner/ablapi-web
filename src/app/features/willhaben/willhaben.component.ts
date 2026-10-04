@@ -60,6 +60,22 @@ import { WillhabenConfigDto, CreateWillhabenConfigDto } from '../../core/models/
             <label>Ref Longitude</label>
             <input type="number" step="any" [(ngModel)]="form.reference_lon" name="reference_lon" />
           </div>
+          <div class="form-group">
+            <label>Handover Types (comma-separated)</label>
+            <input [(ngModel)]="form.handover_types_raw" name="handover_types" placeholder="e.g. Abholung, Lieferung" />
+          </div>
+          <div class="form-group">
+            <label>Allowed States (comma-separated)</label>
+            <input [(ngModel)]="form.allowed_states_raw" name="allowed_states" placeholder="e.g. Wien, Niederösterreich" />
+          </div>
+          <div class="form-group">
+            <label>Must Include (comma-separated)</label>
+            <input [(ngModel)]="form.must_include_raw" name="must_include" placeholder="e.g. Automatik, Klima" />
+          </div>
+          <div class="form-group">
+            <label>Must Exclude (comma-separated)</label>
+            <input [(ngModel)]="form.must_exclude_raw" name="must_exclude" placeholder="e.g. Unfall, Wasser" />
+          </div>
           <div class="form-group checkbox-group">
             <label>
               <input type="checkbox" [(ngModel)]="form.filter_paylivery" name="filter_paylivery" />
@@ -211,6 +227,14 @@ import { WillhabenConfigDto, CreateWillhabenConfigDto } from '../../core/models/
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 0.9rem;
+      appearance: textfield;
+      -webkit-appearance: none;
+    }
+
+    .form-group input[type="number"]::-webkit-inner-spin-button,
+    .form-group input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     .form-group input:focus {
@@ -318,6 +342,10 @@ export class WillhabenComponent implements OnInit {
     reference_lat: 0,
     reference_lon: 0,
     max_distance_km: 0,
+    handover_types_raw: '',
+    allowed_states_raw: '',
+    must_include_raw: '',
+    must_exclude_raw: '',
   };
 
   ngOnInit(): void {
@@ -344,10 +372,14 @@ export class WillhabenComponent implements OnInit {
       price_max: config.price_max,
       filter_paylivery: config.filter_paylivery,
       handover_types: [...config.handover_types],
+      handover_types_raw: config.handover_types.join(', '),
       allowed_states: [...config.allowed_states],
+      allowed_states_raw: config.allowed_states.join(', '),
       km_max: config.km_max,
       must_include: [...config.must_include],
+      must_include_raw: config.must_include.join(', '),
       must_exclude: [...config.must_exclude],
+      must_exclude_raw: config.must_exclude.join(', '),
       sort_by_distance: config.sort_by_distance,
       reference_lat: config.reference_lat,
       reference_lon: config.reference_lon,
@@ -362,9 +394,22 @@ export class WillhabenComponent implements OnInit {
     }
     this.saving = true;
 
+    // Convert raw comma-separated strings to arrays
+    const payload: CreateWillhabenConfigDto = {
+      ...this.form,
+      handover_types: this.parseCommaSeparated(this.form.handover_types_raw),
+      allowed_states: this.parseCommaSeparated(this.form.allowed_states_raw),
+      must_include: this.parseCommaSeparated(this.form.must_include_raw),
+      must_exclude: this.parseCommaSeparated(this.form.must_exclude_raw),
+    };
+    delete payload.handover_types_raw;
+    delete payload.allowed_states_raw;
+    delete payload.must_include_raw;
+    delete payload.must_exclude_raw;
+
     const save$ = this.editingName
-      ? this.willhabenService.updateConfig(this.editingName, this.form)
-      : this.willhabenService.createConfig(this.form);
+      ? this.willhabenService.updateConfig(this.editingName, payload)
+      : this.willhabenService.createConfig(payload);
 
     save$.subscribe({
       next: () => {
@@ -380,6 +425,11 @@ export class WillhabenComponent implements OnInit {
         this.saving = false;
       },
     });
+  }
+
+  private parseCommaSeparated(raw?: string): string[] {
+    if (!raw || !raw.trim()) return [];
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
   }
 
   deleteConfig(name: string): void {
@@ -408,6 +458,10 @@ export class WillhabenComponent implements OnInit {
       reference_lat: 0,
       reference_lon: 0,
       max_distance_km: 0,
+      handover_types_raw: '',
+      allowed_states_raw: '',
+      must_include_raw: '',
+      must_exclude_raw: '',
     };
   }
 }
