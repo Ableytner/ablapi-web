@@ -16,7 +16,13 @@ export class WillhabenService {
   }
 
   createConfig(config: CreateWillhabenConfigDto): Observable<WillhabenConfigDto> {
-    return this.http.post<WillhabenConfigDto>(`${this.baseUrl}/config`, config);
+    const payload: CreateWillhabenConfigDto = {
+      ...config,
+      rows: 100,
+      km_max: 0,
+      sort_by_distance: false,
+    };
+    return this.http.post<WillhabenConfigDto>(`${this.baseUrl}/config`, payload);
   }
 
   updateConfig(name: string, config: CreateWillhabenConfigDto): Observable<WillhabenConfigDto> {

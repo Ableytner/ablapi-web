@@ -3,16 +3,19 @@ export interface WillhabenConfigDto {
   name: string;
   keyword: string;
   category: number;
-  rows: number;
+  /** @deprecated Obsolete – removed from UI; kept for backward compatibility with the backend */
+  rows?: number;
   price_min: number;
   price_max: number;
   filter_paylivery: boolean;
   handover_types: string[];
   allowed_states: string[];
-  km_max: number;
+  /** @deprecated Obsolete – removed from UI; kept for backward compatibility with the backend */
+  km_max?: number;
   must_include: string[];
   must_exclude: string[];
-  sort_by_distance: boolean;
+  /** @deprecated Obsolete – removed from UI; kept for backward compatibility with the backend */
+  sort_by_distance?: boolean;
   reference_lat: number;
   reference_lon: number;
   max_distance_km: number;
@@ -22,16 +25,19 @@ export interface CreateWillhabenConfigDto {
   name: string;
   keyword: string;
   category: number;
-  rows: number;
+  /** @deprecated Obsolete – removed from UI; kept for backward compatibility with the backend */
+  rows?: number;
   price_min: number;
   price_max: number;
   filter_paylivery: boolean;
   handover_types: string[];
   allowed_states: string[];
-  km_max: number;
+  /** @deprecated Obsolete – removed from UI; kept for backward compatibility with the backend */
+  km_max?: number;
   must_include: string[];
   must_exclude: string[];
-  sort_by_distance: boolean;
+  /** @deprecated Obsolete – removed from UI; kept for backward compatibility with the backend */
+  sort_by_distance?: boolean;
   reference_lat: number;
   reference_lon: number;
   max_distance_km: number;

@@ -33,20 +33,12 @@ import { WillhabenConfigDto, CreateWillhabenConfigDto } from '../../core/models/
             <input type="number" [(ngModel)]="form.category" name="category" />
           </div>
           <div class="form-group">
-            <label>Rows</label>
-            <input type="number" [(ngModel)]="form.rows" name="rows" />
-          </div>
-          <div class="form-group">
             <label>Price Min</label>
             <input type="number" [(ngModel)]="form.price_min" name="price_min" />
           </div>
           <div class="form-group">
             <label>Price Max</label>
             <input type="number" [(ngModel)]="form.price_max" name="price_max" />
-          </div>
-          <div class="form-group">
-            <label>KM Max</label>
-            <input type="number" [(ngModel)]="form.km_max" name="km_max" />
           </div>
           <div class="form-group">
             <label>Max Distance (km)</label>
@@ -80,12 +72,6 @@ import { WillhabenConfigDto, CreateWillhabenConfigDto } from '../../core/models/
             <label>
               <input type="checkbox" [(ngModel)]="form.filter_paylivery" name="filter_paylivery" />
               Filter Paylivery
-            </label>
-          </div>
-          <div class="form-group checkbox-group">
-            <label>
-              <input type="checkbox" [(ngModel)]="form.sort_by_distance" name="sort_by_distance" />
-              Sort by Distance
             </label>
           </div>
         </div>
@@ -329,16 +315,13 @@ export class WillhabenComponent implements OnInit {
     name: '',
     keyword: '',
     category: 0,
-    rows: 100,
     price_min: 0,
     price_max: 0,
     filter_paylivery: false,
     handover_types: [],
     allowed_states: [],
-    km_max: 0,
     must_include: [],
     must_exclude: [],
-    sort_by_distance: false,
     reference_lat: 0,
     reference_lon: 0,
     max_distance_km: 0,
@@ -367,7 +350,6 @@ export class WillhabenComponent implements OnInit {
       name: config.name,
       keyword: config.keyword,
       category: config.category,
-      rows: config.rows,
       price_min: config.price_min,
       price_max: config.price_max,
       filter_paylivery: config.filter_paylivery,
@@ -375,12 +357,10 @@ export class WillhabenComponent implements OnInit {
       handover_types_raw: config.handover_types.join(', '),
       allowed_states: [...config.allowed_states],
       allowed_states_raw: config.allowed_states.join(', '),
-      km_max: config.km_max,
       must_include: [...config.must_include],
       must_include_raw: config.must_include.join(', '),
       must_exclude: [...config.must_exclude],
       must_exclude_raw: config.must_exclude.join(', '),
-      sort_by_distance: config.sort_by_distance,
       reference_lat: config.reference_lat,
       reference_lon: config.reference_lon,
       max_distance_km: config.max_distance_km,
@@ -445,16 +425,13 @@ export class WillhabenComponent implements OnInit {
       name: '',
       keyword: '',
       category: 0,
-      rows: 100,
       price_min: 0,
       price_max: 0,
       filter_paylivery: false,
       handover_types: [],
       allowed_states: [],
-      km_max: 0,
       must_include: [],
       must_exclude: [],
-      sort_by_distance: false,
       reference_lat: 0,
       reference_lon: 0,
       max_distance_km: 0,
