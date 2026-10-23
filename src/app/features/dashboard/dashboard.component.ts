@@ -16,6 +16,12 @@ import { AuthService } from '../../core/auth/auth.service';
           <p>View GTNewHorizons build versions, including daily and stable releases.</p>
         </a>
 
+        <a routerLink="/minecraft" class="module-card">
+          <img class="card-icon" src="https://cdn.ableytner.at/icon_minecraft.png" alt="Minecraft" />
+          <h2>Minecraft</h2>
+          <p>Discover and monitor Minecraft servers on the local network.</p>
+        </a>
+
         <a *ngIf="authService.hasWillhabenAccess" routerLink="/willhaben" class="module-card">
           <img class="card-icon" src="/logo-willhaben.png" alt="Willhaben" />
           <h2>Willhaben</h2>

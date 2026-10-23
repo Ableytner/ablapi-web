@@ -1,5 +1,5 @@
 # ---- Build ----
-FROM --platform=$BUILDPLATFORM node:22-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -7,22 +7,21 @@ COPY . .
 RUN npm run build -- --configuration production
 
 # ---- Serve ----
-FROM nginx:1.27-alpine
+# The Angular SSR server (Express + CommonEngine) serves the built browser
+# assets, renders pages, and exposes the /api/minecraft/scan endpoint.
+FROM node:22-alpine
+WORKDIR /app
 
-COPY --from=build /app/dist/ablapi-web/browser /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Production dependencies only. `minecraft-protocol` is externalized from the
+# server bundle (see angular.json) and resolved from node_modules at runtime,
+# so a production install is required for the scan endpoint to work.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
-# Run as unprivileged user
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-    && chown -R nginx:nginx /var/cache/nginx \
-    && chown -R nginx:nginx /var/log/nginx \
-    && chown -R nginx:nginx /run
-
-USER nginx
+# Built application: server bundle + browser assets.
+COPY --from=build /app/dist/ablapi-web ./dist/ablapi-web
 
 ENV PORT=80
 EXPOSE 80
 
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+CMD ["node", "dist/ablapi-web/server/server.mjs"]

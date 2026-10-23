@@ -6,6 +6,7 @@ export const routes: Routes = [
   { path: 'dashboard', canActivate: [authGuard], loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
   { path: 'gtnh', canActivate: [authGuard], loadComponent: () => import('./features/gtnh/gtnh.component').then(m => m.GtnhComponent) },
   { path: 'willhaben', canActivate: [authGuard], loadComponent: () => import('./features/willhaben/willhaben.component').then(m => m.WillhabenComponent) },
+  { path: 'minecraft', canActivate: [authGuard], loadComponent: () => import('./features/minecraft/minecraft.component').then(m => m.MinecraftComponent) },
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/login' },
 ];
