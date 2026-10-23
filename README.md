@@ -82,8 +82,9 @@ Configurations are stored via the AblApi backend:
 ## Docker
 
 The `Dockerfile` builds the app and runs the Node SSR server (it serves the browser
-assets, renders pages, and exposes the scan endpoint). It listens on port `80`
-inside the container; `docker-compose.yml` maps `80:80`.
+assets, renders pages, and exposes the scan endpoint). It listens on port `8080`
+inside the container and runs as the non-root `node` user (UID 1000);
+`docker-compose.yml` maps `80:8080`.
 
 ```bash
 docker compose up --build

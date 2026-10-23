@@ -19,9 +19,11 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 # Built application: server bundle + browser assets.
-COPY --from=build /app/dist/ablapi-web ./dist/ablapi-web
+COPY --from=build --chown=node:node /app/dist/ablapi-web ./dist/ablapi-web
 
-ENV PORT=80
-EXPOSE 80
+ENV PORT=8080
+EXPOSE 8080
+
+USER node
 
 CMD ["node", "dist/ablapi-web/server/server.mjs"]
