@@ -104,6 +104,14 @@ export class AppComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
+  constructor() {
+    // Restore the session from the auth cookie before the router's first
+    // navigation, so the auth guard sees the user as logged in after a
+    // page refresh. Safe during SSR: the cookie helpers are no-ops on the
+    // server, where the signal simply stays empty.
+    this.authService.restore();
+  }
+
   isAuthenticated(): boolean {
     return this.authService.isAuthenticated();
   }

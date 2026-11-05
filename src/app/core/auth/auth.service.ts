@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthResponse } from '../models/auth.model';
+import { clearAuthCookie, getAuthCookie, setAuthCookie } from './cookie.util';
 
 @Injectable({
   providedIn: 'root',
@@ -31,8 +32,27 @@ export class AuthService {
       tap((response) => {
         this.tokenSignal.set(response.token);
         this.decodeRoles(response.token);
+        setAuthCookie(response.token, response.expires_at);
       })
     );
+  }
+
+  /**
+   * Restore the session from the auth cookie on app startup so that a page
+   * refresh does not log the user out. Clears the cookie if the stored token
+   * is already expired.
+   */
+  restore(): void {
+    const token = getAuthCookie();
+    if (!token) {
+      return;
+    }
+    if (this.isExpired(token)) {
+      clearAuthCookie();
+      return;
+    }
+    this.tokenSignal.set(token);
+    this.decodeRoles(token);
   }
 
   logout(): void {
@@ -40,10 +60,28 @@ export class AuthService {
     this.rolesSignal.set([]);
     this.hasWillhabenAccess = false;
     this.hasAdminAccess = false;
+    clearAuthCookie();
   }
 
   isAuthenticated(): boolean {
     return this.tokenSignal() !== null;
+  }
+
+  /** Checks the JWT `exp` claim (seconds) against the current time. */
+  private isExpired(token: string): boolean {
+    try {
+      const payload = token.split('.')[1];
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = base64.length % 4;
+      const decoded = atob(base64 + (pad ? '='.repeat(4 - pad) : ''));
+      const claims = JSON.parse(decoded);
+      if (typeof claims.exp === 'number') {
+        return claims.exp * 1000 <= Date.now();
+      }
+    } catch {
+      // Unparseable token — treat as valid and let the API decide.
+    }
+    return false;
   }
 
   private decodeRoles(token: string): void {
