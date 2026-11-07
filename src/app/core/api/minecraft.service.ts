@@ -16,7 +16,15 @@ import { MinecraftServerDto } from '../models/minecraft.model';
 export class MinecraftService {
   private http = inject(HttpClient);
 
-  scan(): Observable<MinecraftServerDto[]> {
-    return this.http.get<MinecraftServerDto[]>('/api/minecraft/scan');
+  /**
+   * Request a scan. With `forceFull` the backend rescans the entire port range
+   * (bypassing its candidate-port cache), which is what the "Re-scan" button
+   * uses to pick up servers that were missed earlier.
+   */
+  scan(forceFull = false): Observable<MinecraftServerDto[]> {
+    const url = forceFull
+      ? '/api/minecraft/scan?full=1'
+      : '/api/minecraft/scan';
+    return this.http.get<MinecraftServerDto[]>(url);
   }
 }

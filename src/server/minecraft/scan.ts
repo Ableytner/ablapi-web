@@ -20,7 +20,11 @@ const { ping } = minecraftProtocol;
 const HOST = '192.168.0.11';
 const PORT_START = 25566;
 const PORT_END = 25666;
-const PORT_SCAN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// How often the *full* port range is re-probed. This is deliberately separate
+// from the per-request status refresh: a status-only request must never push
+// this clock forward, otherwise a port that was missed (e.g. a server that was
+// restarting) during a full scan would stay undiscovered forever.
+const FULL_SCAN_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const CONCURRENCY = 20;
 const PING_CLOSE_TIMEOUT_MS = 2000;
 const PING_NO_PONG_TIMEOUT_MS = 1000;
@@ -38,10 +42,13 @@ export interface MinecraftServerDto {
 
 interface PortScanCache {
   ports: number[];
-  timestamp: number;
 }
 
 let portScanCache: PortScanCache | null = null;
+// When the last *full* rescan of the entire port range ran. Unlike the cache
+// timestamp, this is only advanced by a full rescan — never by a status-only
+// refresh — so it drives how often we re-discover the whole range.
+let lastFullScanAt = 0;
 
 function allPorts(): number[] {
   const ports: number[] = [];
@@ -51,15 +58,13 @@ function allPorts(): number[] {
   return ports;
 }
 
-function isCacheFresh(): boolean {
-  return (
-    portScanCache !== null &&
-    Date.now() - portScanCache.timestamp < PORT_SCAN_TTL_MS
-  );
+/** True when the whole port range needs to be re-probed. */
+function isFullScanDue(): boolean {
+  return Date.now() - lastFullScanAt >= FULL_SCAN_INTERVAL_MS;
 }
 
 function storeCache(ports: number[]): void {
-  portScanCache = { ports, timestamp: Date.now() };
+  portScanCache = { ports };
 }
 
 function invalidateCache(): void {
@@ -182,41 +187,54 @@ function sortServers(servers: MinecraftServerDto[]): MinecraftServerDto[] {
 }
 
 /**
- * Discover Minecraft servers.
- *
- * 1. If the port-scan cache is fresh, ping only the cached candidate ports.
- * 2. Status is always live (never cached).
- * 3. If any cached candidate port fails to answer, the cache is considered
- *    stale: invalidate it, run a full rescan, and return the fresh result.
- * 4. A full rescan that finds zero servers does not cache the empty list, so a
- *    server started later is picked up on the next request.
+ * Run a full rescan of the whole port range, record when it happened, and cache
+ * the discovered ports (an empty result is not cached, so a server that starts
+ * later is re-discovered on the next request).
  */
-export async function scanMinecraftServers(): Promise<MinecraftServerDto[]> {
-  if (isCacheFresh() && portScanCache !== null) {
-    const cachedPorts = portScanCache.ports;
-    const results = await mapWithConcurrency(
-      cachedPorts,
-      pingPort,
-      CONCURRENCY,
-    );
-    const successes = results.filter((r): r is MinecraftServerDto => r !== null);
-    const failedCount = results.length - successes.length;
-
-    if (failedCount > 0) {
-      // A previously-known port stopped answering -> full rescan.
-      invalidateCache();
-      return scanAllPorts();
-    }
-
-    // All cached ports still answer -> refresh the cache timestamp and return.
-    storeCache(cachedPorts);
-    return sortServers(successes);
-  }
-
-  // No fresh cache (or first run) -> full rescan.
+async function runFullScan(): Promise<MinecraftServerDto[]> {
   const servers = await scanAllPorts();
+  lastFullScanAt = Date.now();
   if (servers.length > 0) {
     storeCache(servers.map((s) => s.port));
   }
   return servers;
+}
+
+/**
+ * Discover Minecraft servers.
+ *
+ * 1. Status is always live (never cached).
+ * 2. A full rescan of the whole port range runs when it is due (every
+ *    `FULL_SCAN_INTERVAL_MS`, driven by `lastFullScanAt` — NOT by request
+ *    activity), when there is no cached port list yet, or when `forceFull` is
+ *    set (the UI "Re-scan" button).
+ * 3. When the full scan is not due, only the cached candidate ports are
+ *    pinged. If any of them fails to answer, the cache is stale and a full
+ *    rescan runs immediately.
+ *
+ * The key invariant: a status-only refresh must never postpone the next full
+ * rescan. Otherwise a port missed during one full scan (e.g. a server that was
+ * restarting) would stay undiscovered for the whole life of the process.
+ */
+export async function scanMinecraftServers(
+  forceFull = false,
+): Promise<MinecraftServerDto[]> {
+  if (forceFull || isFullScanDue() || portScanCache === null) {
+    return runFullScan();
+  }
+
+  const cachedPorts = portScanCache.ports;
+  const results = await mapWithConcurrency(cachedPorts, pingPort, CONCURRENCY);
+  const successes = results.filter((r): r is MinecraftServerDto => r !== null);
+  const failedCount = results.length - successes.length;
+
+  if (failedCount > 0) {
+    // A previously-known port stopped answering -> full rescan.
+    invalidateCache();
+    return runFullScan();
+  }
+
+  // All cached ports still answer -> return live status. `lastFullScanAt` is
+  // intentionally left untouched so the periodic full rescan still comes due.
+  return sortServers(successes);
 }

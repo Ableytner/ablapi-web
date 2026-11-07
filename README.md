@@ -44,9 +44,14 @@ The browser cannot open raw TCP sockets, so this must run on the Node server rat
 than in the frontend.
 
 - Endpoint: `GET /api/minecraft/scan`
-- Discovered ports are cached for 24 h; live status (MOTD/players/ping) is always
-  re-fetched. If a cached port stops responding, the cache is invalidated and a full
-  rescan runs.
+- Live status (MOTD/players/ping) is always re-fetched. To keep page loads fast,
+  a normal request only re-pings the ports discovered by the most recent full
+  scan; a full rescan of the whole port range runs automatically every 24 h.
+- If a previously-known port stops responding, the cache is invalidated and a full
+  rescan runs immediately.
+- To force a full rescan right now (e.g. a server that was down during the last
+  full scan), call `GET /api/minecraft/scan?full=1` — the UI **Re-scan** button
+  does exactly this.
 
 ### Running locally
 

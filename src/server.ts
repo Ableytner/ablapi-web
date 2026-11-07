@@ -28,10 +28,15 @@ app.use(
 /**
  * Minecraft server scan endpoint (server-side only).
  * Returns the discovered servers, sorted by player count (descending).
+ *
+ * Pass `?full=1` to force a full rescan of the entire port range (bypassing the
+ * candidate-port cache). The UI "Re-scan" button does this so a server that was
+ * missed during a previous scan is re-discovered immediately.
  */
 app.get('/api/minecraft/scan', async (req, res) => {
   try {
-    const servers = await scanMinecraftServers();
+    const forceFull = req.query['full'] === '1' || req.query['full'] === 'true';
+    const servers = await scanMinecraftServers(forceFull);
     res.json(servers);
   } catch (err) {
     console.error('Minecraft scan failed:', err);

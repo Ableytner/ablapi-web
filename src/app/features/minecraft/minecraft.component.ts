@@ -18,7 +18,7 @@ import { MinecraftServerDto } from '../../core/models/minecraft.model';
           <h1>Minecraft</h1>
           <p class="page-subtitle">Minecraft servers on 192.168.0.11 (ports 25566–25666)</p>
         </div>
-        <button class="btn-primary" (click)="scan()" [disabled]="loading">
+        <button class="btn-primary" (click)="scan(true)" [disabled]="loading">
           {{ loading ? 'Scanning…' : 'Re-scan' }}
         </button>
       </div>
@@ -291,13 +291,19 @@ export class MinecraftComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    // Initial page load uses the cheap cached path (only re-pings known ports).
     this.scan();
   }
 
-  scan(): void {
+  /**
+   * Trigger a scan. `forceFull` makes the backend rescan the entire port range
+   * so a server missed during a previous scan is re-discovered. The "Re-scan"
+   * button always forces a full scan; the initial page load does not.
+   */
+  scan(forceFull = false): void {
     this.loading = true;
     this.error = '';
-    this.minecraftService.scan().subscribe({
+    this.minecraftService.scan(forceFull).subscribe({
       next: (data) => {
         // The backend already sorts descending, but re-sort here to guarantee
         // the order regardless of the data source.
