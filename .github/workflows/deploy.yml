@@ -1,0 +1,73 @@
+name: Deploy via ablapi
+
+on:
+  workflow_call:
+    inputs:
+      ablapi_user_id:
+        required: true
+        type: string
+      ablapi_token:
+        required: true
+        type: string
+      deploy_name:
+        required: true
+        type: string
+      ablapi_base_url:
+        required: false
+        type: string
+        default: "https://api.ableytner.at"
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Preflight check
+        env:
+          USER_ID: ${{ inputs.ablapi_user_id }}
+          TOKEN: ${{ inputs.ablapi_token }}
+          DEPLOY_NAME: ${{ inputs.deploy_name }}
+        run: |
+          [ -n "$USER_ID" ] || { echo "::error::ablapi_user_id is empty"; exit 1; }
+          [ -n "$TOKEN" ] || { echo "::error::ablapi_token is empty"; exit 1; }
+          [ -n "$DEPLOY_NAME" ] || { echo "::error::deploy_name is empty"; exit 1; }
+          echo "Preflight OK: will deploy '${DEPLOY_NAME}'"
+
+      - name: Authenticate
+        id: auth
+        env:
+          BASE_URL: ${{ inputs.ablapi_base_url }}
+          USER_ID: ${{ inputs.ablapi_user_id }}
+          TOKEN: ${{ inputs.ablapi_token }}
+        run: |
+          response=$(curl -fsS -X POST "${BASE_URL}/auth" -H "Authorization: Basic $(printf '%s:%s' "$USER_ID" "$TOKEN" | base64 -w0)")
+          jwt=$(printf '%s' "$response" | jq -r '.token')
+          [ -n "$jwt" ] && [ "$jwt" != "null" ] || { echo "::error::Failed to obtain JWT from /auth"; exit 1; }
+          printf 'jwt=%s\n' "$jwt" >> "${GITHUB_OUTPUT}"
+          echo "Authenticated against ${BASE_URL}"
+
+      - name: Deploy
+        id: deploy
+        env:
+          BASE_URL: ${{ inputs.ablapi_base_url }}
+          DEPLOY_NAME: ${{ inputs.deploy_name }}
+          JWT: ${{ steps.auth.outputs.jwt }}
+        run: |
+          response=$(curl -sS -w $'\n%{http_code}' -X POST "${BASE_URL}/deploy" -H "Authorization: Bearer ${JWT}" -H "Content-Type: application/json" -d "{\"name\":\"${DEPLOY_NAME}\"}")
+          code=$(printf '%s' "$response" | tail -n1)
+          body=$(printf '%s' "$response" | sed '$d')
+          printf 'code=%s\n' "$code" >> "${GITHUB_OUTPUT}"
+          { printf 'body<<ABLAPI_BODY_EOF\n'; printf '%s' "$body"; printf '\nABLAPI_BODY_EOF\n'; } >> "${GITHUB_OUTPUT}"
+          echo "Deploy request sent for '${DEPLOY_NAME}'"
+
+      - name: Check response
+        env:
+          CODE: ${{ steps.deploy.outputs.code }}
+          BODY: ${{ steps.deploy.outputs.body }}
+        run: |
+          echo "Deploy response (${CODE}): ${BODY}"
+          [ "$CODE" = "202" ] || { echo "::error::Deploy failed with HTTP ${CODE}"; exit 1; }
+          echo "Deploy accepted."
