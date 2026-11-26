@@ -3,12 +3,6 @@ name: Deploy via ablapi
 on:
   workflow_call:
     inputs:
-      ablapi_user_id:
-        required: true
-        type: string
-      ablapi_token:
-        required: true
-        type: string
       deploy_name:
         required: true
         type: string
@@ -16,6 +10,11 @@ on:
         required: false
         type: string
         default: "https://api.ableytner.at"
+    secrets:
+      ABLAPI_USER_ID:
+        required: true
+      ABLAPI_TOKEN:
+        required: true
 
 defaults:
   run:
@@ -27,12 +26,12 @@ jobs:
     steps:
       - name: Preflight check
         env:
-          USER_ID: ${{ inputs.ablapi_user_id }}
-          TOKEN: ${{ inputs.ablapi_token }}
+          USER_ID: ${{ secrets.ABLAPI_USER_ID }}
+          TOKEN: ${{ secrets.ABLAPI_TOKEN }}
           DEPLOY_NAME: ${{ inputs.deploy_name }}
         run: |
-          [ -n "$USER_ID" ] || { echo "::error::ablapi_user_id is empty"; exit 1; }
-          [ -n "$TOKEN" ] || { echo "::error::ablapi_token is empty"; exit 1; }
+          [ -n "$USER_ID" ] || { echo "::error::ABLAPI_USER_ID is empty"; exit 1; }
+          [ -n "$TOKEN" ] || { echo "::error::ABLAPI_TOKEN is empty"; exit 1; }
           [ -n "$DEPLOY_NAME" ] || { echo "::error::deploy_name is empty"; exit 1; }
           echo "Preflight OK: will deploy '${DEPLOY_NAME}'"
 
@@ -40,8 +39,8 @@ jobs:
         id: auth
         env:
           BASE_URL: ${{ inputs.ablapi_base_url }}
-          USER_ID: ${{ inputs.ablapi_user_id }}
-          TOKEN: ${{ inputs.ablapi_token }}
+          USER_ID: ${{ secrets.ABLAPI_USER_ID }}
+          TOKEN: ${{ secrets.ABLAPI_TOKEN }}
         run: |
           response=$(curl -fsS -X POST "${BASE_URL}/auth" -H "Authorization: Basic $(printf '%s:%s' "$USER_ID" "$TOKEN" | base64 -w0)")
           jwt=$(printf '%s' "$response" | jq -r '.token')

@@ -67,6 +67,5 @@ jobs:
     if: ${{ inputs.push_image }}
     uses: ./.github/workflows/define-deploy.yml
     with:
-      ablapi_user_id: ${{ secrets.ABLAPI_USER_ID }}
-      ablapi_token: ${{ secrets.ABLAPI_TOKEN }}
       deploy_name: ablapi-web
+    secrets: inherit
